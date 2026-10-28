@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tryout TKA Bahasa Indonesia - Bu Ning</title>
+    <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const soalData = [
+            {
+                id: 1,
+                bagian: "Bagian 1: Teks Informasi (Soal 1 - 25)",
+                teks: "Dampak Digitalisasi terhadap Sektor UMKM di Indonesia\n\nAkselerasi transformasi digital di Indonesia berkembang pesat dalam tiga tahun terakhir. Data Kementerian Koperasi dan UMKM menunjukkan bahwa hingga akhir tahun 2025, sebanyak 24 juta Usaha Mikro, Kecil, dan Menengah (UMKM) telah masuk ke dalam ekosistem digital (onboarding). Pemerintah menargetkan angka ini mencapai 30 juta UMKM pada akhir tahun 2026. Digitalisasi memberikan peluang besar bagi UMKM untuk memperluas jangkauan pasar, meningkatkan efisiensi operasional, dan mempermudah akses pembiayaan.\n\nNamun, tantangan yang dihadapi tidaklah mudah. Masalah utama yang sering muncul adalah kesenjangan literasi digital antardaerah, infrastruktur internet yang belum merata di pelosok, serta ancaman keamanan siber (cybersecurity). Banyak pelaku usaha mikro di daerah rural yang belum memahami cara mengoptimalkan platform e-commerce dan strategi pemasaran digital secara aman. Oleh karena itu, program pendampingan yang berkelanjutan mutlak diperlukan, bukan sekadar pelatihan sekali selesai.",
+                pertanyaan: "Apa gagasan utama paragraf pertama pada teks di atas?",
+                opsi: [
+                    "A. Pemerintah menargetkan 30 juta UMKM masuk ekosistem digital pada tahun 2026.",
+                    "B. Akselerasi transformasi digital memicu perkembangan pesat UMKM di Indonesia.",
+                    "C. Manfaat dan perkembangan digitalisasi pada sektor UMKM di Indonesia.",
+                    "D. Tantangan berat yang dihadapi oleh pelaku UMKM dalam ekosistem digital.",
+                    "E. Data Kementerian Koperasi dan UMKM mengenai jumlah pelaku usaha mikro."
+                ],
+                kunci: 2, // Indeks C (0, 1, 2, ...)
+                pembahasan: "Gagasan utama paragraf pertama mencakup keseluruhan isi paragraf yaitu perkembangan pesat transformasi digital serta peluang dan manfaatnya bagi UMKM di Indonesia."
+            },
+            {
+                id: 2,
+                bagian: "Bagian 1: Teks Informasi (Soal 1 - 25)",
+                teks: "Dampak Digitalisasi terhadap Sektor UMKM di Indonesia (Lanjutan)",
+                pertanyaan: "Berdasarkan teks tersebut, manakah yang merupakan salah satu manfaat langsung dari digitalisasi UMKM?",
+                opsi: [
+                    "A. Mengurangi biaya pajak tahunan pelaku usaha secara signifikan.",
+                    "B. Menghilangkan seluruh kompetitor bisnis di pasar domestik.",
+                    "C. Mempermudah akses pembiayaan dan memperluas jangkauan pasar.",
+                    "D. Menjamin keamanan data konsumen dari serangan siber tanpa proteksi tambahan.",
+                    "E. Mengubah seluruh sistem produksi manual menjadi otomatisasi robotik."
+                ],
+                kunci: 2,
+                pembahasan: "Teks secara eksplisit menyatakan bahwa digitalisasi memberikan peluang besar untuk memperluas jangkauan pasar, meningkatkan efisiensi, dan mempermudah akses pembiayaan."
+            }
+            // Catatan: Sisa soal hingga 50 dapat dimasukkan dengan format serupa ke dalam array ini.
+        ];
+
+        function App() {
+            const [step, setStep] = useState('login'); // login, quiz, result
+            const [nama, setNama] = useState('');
+            const [kelas, setKelas] = useState('');
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [jawabanUser, setJawabanUser] = useState({});
+            const [statusJawab, setStatusJawab] = useState({}); // { index: 'benar' / 'salah' }
+            const [timeLeft, setTimeLeft] = useState(3600); // 60 menit
+            const [riwayat, setRiwayat] = useState([]);
+
+            useEffect(() => {
+                const saved = localStorage.getItem('riwayat_tka_ning');
+                if (saved) setRiwayat(JSON.parse(saved));
+            }, []);
+
+            useEffect(() => {
+                if (step === 'quiz' && timeLeft > 0) {
+                    const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+                    return () => clearInterval(timer);
+                } else if (timeLeft === 0 && step === 'quiz') {
+                    selesaiUjian();
+                }
+            }, [step, timeLeft]);
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                if (!nama.trim() || !kelas.trim()) return alert('Mohon isi nama dan kelas!');
+                setStep('quiz');
+            };
+
+            const pilihJawaban = (optIndex) => {
+                if (statusJawab[currentIndex]) return; // Jika sudah dijawab, kunci pilihan
+                const currentSoal = soalData[currentIndex];
+                const isBenar = optIndex === currentSoal.kunci;
+
+                setJawabanUser({...jawabanUser, [currentIndex]: optIndex});
+                setStatusJawab({...statusJawab, [currentIndex]: isBenar ? 'benar' : 'salah'});
+
+                if (isBenar) {
+                    setTimeout(() => {
+                        if (currentIndex < soalData.length - 1) {
+                            setCurrentIndex(currentIndex + 1);
+                        } else {
+                            selesaiUjian();
+                        }
+                    }, 1200);
+                }
+            };
+
+            const selesaiUjian = () => {
+                let skorHitung = 0;
+                soalData.forEach((s, idx) => {
+                    if (jawabanUser[idx] === s.kunci) skorHitung += (100 / soalData.length);
+                });
+
+                const hasilBaru = {
+                    nama,
+                    kelas,
+                    skor: Math.round(skorHitung),
+                    tanggal: new Date().toLocaleDateString('id-ID')
+                };
+
+                const updatedRiwayat = [hasilBaru, ...riwayat];
+                setRiwayat(updatedRiwayat);
+                localStorage.setItem('riwayat_tka_ning', JSON.stringify(updatedRiwayat));
+                setStep('result');
+            };
+
+            const formatWaktu = (detik) => {
+                const m = Math.floor(detik / 60);
+                const s = detik % 60;
+                return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-100 flex flex-col items-center p-4">
+                    <header className="w-full max-w-4xl bg-indigo-700 text-white p-4 rounded-xl shadow-md mb-4 flex justify-between items-center">
+                        <div>
+                            <h1 className="text-xl font-bold">Tryout TKA Bahasa Indonesia (SMA)</h1>
+                            <p className="text-sm text-indigo-200">Dibuat oleh Bu Guru Baiq Nining Sekarsih</p>
+                        </div>
+                        {step === 'quiz' && (
+                            <div className="bg-indigo-900 px-4 py-2 rounded-lg font-mono text-lg font-bold">
+                                ⏱️ {formatWaktu(timeLeft)}
+                            </div>
+                        )}
+                    </header>
+
+                    <main className="w-full max-w-4xl bg-white rounded-xl shadow-md p-6">
+                        {step === 'login' && (
+                            <form onSubmit={handleLogin} className="space-y-4 max-w-md mx-auto py-10">
+                                <h2 className="text-2xl font-bold text-center text-indigo-700">Silakan Masuk</h2>
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Nama Lengkap:</label>
+                                    <input type="text" value={nama} onChange={e => setNama(e.target.value)} required className="w-full border p-2 rounded-lg" placeholder="Masukkan nama Anda" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Kelas:</label>
+                                    <input type="text" value={kelas} onChange={e => setKelas(e.target.value)} required className="w-full border p-2 rounded-lg" placeholder="Contoh: X IPA 1" />
+                                </div>
+                                <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded-lg font-bold hover:bg-indigo-700">Mulai Ujian</button>
+                            </form>
+                        )}
+
+                        {step === 'quiz' && (
+                            <div>
+                                <div className="flex justify-between items-center mb-4 border-b pb-2">
+                                    <span className="text-sm font-semibold text-slate-500">{soalData[currentIndex].bagian}</span>
+                                    <span className="text-sm font-bold text-indigo-600">Soal {currentIndex + 1} dari {soalData.length}</span>
+                                </div>
+
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <div className="bg-slate-50 p-4 rounded-lg border max-h-[400px] overflow-y-auto text-sm leading-relaxed">
+                                        <h3 className="font-bold mb-2 text-indigo-900">Teks Bacaan:</h3>
+                                        <p className="whitespace-pre-line">{soalData[currentIndex].teks}</p>
+                                    </div>
+
+                                    <div>
+                                        <h3 className="font-semibold text-base mb-3">{soalData[currentIndex].pertanyaan}</h3>
+                                        <div className="space-y-2">
+                                            {soalData[currentIndex].opsi.map((opt, idx) => {
+                                                let btnColor = "bg-white border-slate-200 hover:bg-slate-50";
+                                                const pilihanAktif = jawabanUser[currentIndex] === idx;
+                                                const status = statusJawab[currentIndex];
+
+                                                if (status) {
+                                                    if (idx === soalData[currentIndex].kunci) {
+                                                        btnColor = "bg-green-100 border-green-500 text-green-900 font-bold";
+                                                    } else if (pilihanAktif && status === 'salah') {
+                                                        btnColor = "bg-red-100 border-red-500 text-red-900 font-bold";
+                                                    }
+                                                }
+
+                                                return (
+                                                    <button
+                                                        key={idx}
+                                                        onClick={() => pilihJawaban(idx)}
+                                                        className={`w-full text-left p-3 rounded-lg border text-sm transition-all ${btnColor}`}
+                                                    >
+                                                        {opt}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {statusJawab[currentIndex] === 'salah' && (
+                                            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
+                                                <p className="font-bold">❌ Jawaban Kurang Tepat</p>
+                                                <p className="mt-1"><strong>Pembahasan:</strong> {soalData[currentIndex].pembahasan}</p>
+                                                <button onClick={() => {
+                                                    if (currentIndex < soalData.length - 1) setCurrentIndex(currentIndex + 1);
+                                                    else selesaiUjian();
+                                                }} className="mt-3 bg-red-600 text-white px-4 py-1.5 rounded text-xs font-bold">Lanjut ke Soal Berikutnya &rarr;</button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="mt-8 flex gap-2 overflow-x-auto pb-2">
+                                    {soalData.map((_, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => setCurrentIndex(i)}
+                                            className={`w-8 h-8 rounded font-bold text-xs flex items-center justify-center ${currentIndex === i ? 'ring-2 ring-indigo-600' : ''} ${statusJawab[i] === 'benar' ? 'bg-green-500 text-white' : statusJawab[i] === 'salah' ? 'bg-red-500 text-white' : 'bg-slate-200 text-slate-700'}`}
+                                        >
+                                            {i + 1}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {step === 'result' && (
+                            <div className="text-center py-6">
+                                <h2 className="text-2xl font-bold text-indigo-700 mb-2">Ujian Selesai!</h2>
+                                <p className="text-slate-600 mb-6">Terima kasih telah mengerjakan tryout, <strong>{nama}</strong> ({kelas}).</p>
+                                
+                                <div className="mt-8 text-left">
+                                    <h3 className="font-bold text-lg mb-3 text-slate-700">📋 Daftar Siswa yang Telah Mengerjakan:</h3>
+                                    <div className="overflow-x-auto border rounded-lg">
+                                        <table className="w-full text-left border-collapse text-sm">
+                                            <thead>
+                                                <tr className="bg-indigo-50 text-indigo-900 border-b">
+                                                    <th className="p-3">No</th>
+                                                    <th className="p-3">Nama Siswa</th>
+                                                    <th className="p-3">Kelas</th>
+                                                    <th className="p-3">Skor</th>
+                                                    <th className="p-3">Tanggal</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {riwayat.map((item, idx) => (
+                                                    <tr key={idx} className="border-b hover:bg-slate-50">
+                                                        <td className="p-3">{idx + 1}</td>
+                                                        <td className="p-3 font-medium">{item.nama}</td>
+                                                        <td className="p-3">{item.kelas}</td>
+                                                        <td className="p-3 font-bold text-indigo-600">{item.skor}</td>
+                                                        <td className="p-3 text-slate-500">{item.tanggal}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
